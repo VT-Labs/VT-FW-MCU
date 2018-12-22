@@ -1,6 +1,8 @@
 # VT-FW-MCU
 READ CAREFULLY! 
-This repository contains as-is, and not responsible for any harm, lost, damages or issues that may occur.
+THE DATA IS PROVIDED “AS IS” AND “AS AVAILABLE”.  WE SHALL NOT BE LIABLE FOR DIRECT, INDIRECT, INCIDENTAL, PUNITIVE, EXEMPLARY, SPECIAL OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS AND PROPERTY DAMAGE, EVEN IF WE WERE ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.  IN NO EVENT SHALL OUR TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES AND CAUSES OF ACTION.
+
+You may not decompile, reverse engineer or disassemble any data of this repository. The Data may be available only for limited periods of time and may be removed, replaced, changed or updated at any time at our sole discretion and with or without notice to you.
 
 # VT-FW-agent APIs
 The security agent will monitor the suspicious or malicious activities on CAN Bus. These APIs can be integrated into automotive ECUs to defend against abnormal activities.
