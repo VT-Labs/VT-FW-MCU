@@ -1,0 +1,15 @@
+
+FW needs 256KB memory to run on MCU. More memory will makes FW more powerful and higher performance.
+
+False positive testing:
+Current version triggers Zero false poitive on 10+ various normal CAN traffic.
+
+Selected detect attack scenarios:
+1. different CAN Bus scanning attacks
+2. security scan attack
+3. spoof attack
+4. fuzzing
+5. DoS
+6. online CAN Frame blocking
+7. replay attack
+8. and more...
