@@ -1,0 +1,11 @@
+
+
+/***
+| __Animals__ | __Sports__ | __Fruits__ |
+|-------------|------------|------------|
+| Cat         | Soccer     | Apple      |
+| Dog         | Basketball | Orange     |
+***/
+
+
+. tbl ("Column 1", "Column 2", "Column 3" \ 10, 100, 1000 )
