@@ -90,6 +90,7 @@ void vt_fw_traffic_status_event(vt_car_status_t car_status, float slot_rate, flo
 {
 	char st[256];
 	int size = 0;
+	uint8_t flag = 0;
 
 	memset(st,'\0', 256);
 
@@ -101,31 +102,44 @@ void vt_fw_traffic_status_event(vt_car_status_t car_status, float slot_rate, flo
 	}
 	else
 	{
+		snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
+		size = strlen(st);
 		/* Matched with vector, slot and pattern */
 		if((car_status & VT_CAR_NORMAL_STAT) == VT_CAR_NORMAL_STAT)
 		{
-			snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\nThe CAN bus traffic is normal\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
+			snprintf(&st[size], (256 - size),"The CAN bus traffic is normal\r\n");
 			vt_led_off(leds[VT_BLOCK_LED]);
+			flag = 1;
+		}
+		else if((car_status & VT_CAR_ABNORMAL_OVER_STAT) == VT_CAR_ABNORMAL_OVER_STAT)
+		{
+			snprintf(&st[size], (256 - size),"The CAN bus traffic is abnormal - overload frames\r\n");
+			vt_led_on(leds[VT_BLOCK_LED]);
+			flag = 1;
+		}
+		else if((car_status & VT_CAR_ABNORMAL_STAT) == VT_CAR_ABNORMAL_STAT)
+		{
+			snprintf(&st[size], (256 - size),"The CAN bus traffic is abnormal\r\n");
+			vt_led_on(leds[VT_BLOCK_LED]);
+			flag = 1;
+		}
+		else if((car_status & VT_CAR_ABNORMAL_INVALID_ID) == VT_CAR_ABNORMAL_INVALID_ID)
+		{
+			snprintf(&st[size], (256 - size),"The CAN bus traffic is abnormal - invalid can id\r\n");
+			vt_led_on(leds[VT_BLOCK_LED]);
+			flag = 1;
 		}
 
-		if((car_status & VT_CAR_ABNORMAL_OVER_STAT) == VT_CAR_ABNORMAL_OVER_STAT)
-		{
-			snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\nThe CAN bus traffic is abnormal - overload frames\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
-			vt_led_on(leds[VT_BLOCK_LED]);
-		}
-
-		if((car_status & VT_CAR_ABNORMAL_STAT) == VT_CAR_ABNORMAL_STAT)
-		{
-			snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\nThe CAN bus traffic is abnormal\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
-			vt_led_on(leds[VT_BLOCK_LED]);
-		}
 
 		/* Matched with another condition */
 		if((car_status & VT_CAR_ABNORMAL_DS_TP_STAT) == VT_CAR_ABNORMAL_DS_TP_STAT)
 		{
 			size = strlen(st);
-			if(size == 0)
-				snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\nThe CAN bus traffic is abnormal - diagnostic\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
+			if(flag == 0)
+			{
+				snprintf(&st[size], 256 - size, "The CAN bus traffic is abnormal - diagnostic\r\n");
+				flag = 1;
+			}
 			else
 				snprintf(&st[size - 2], (256 - size), " - diagnostic\r\n");
 			vt_led_off(leds[VT_BLOCK_LED]);
@@ -134,8 +148,8 @@ void vt_fw_traffic_status_event(vt_car_status_t car_status, float slot_rate, flo
 		if((car_status & VT_CAR_ABNORMAL_MALICIOUS) == VT_CAR_ABNORMAL_MALICIOUS)
 		{
 			size = strlen(st);
-			if(size == 0)
-				snprintf(st, 256, "- Slot rate: %.3f%%\r\n- Pattern rate: %.3f%% all frame: %lu\r\nThe CAN bus traffic is abnormal - malicious\r\n", slot_rate * 100.0f, pattern_rate * 100.0f, count_frames);
+			if(flag == 0)
+				snprintf(&st[size], 256 - size, "The CAN bus traffic is abnormal - malicious\r\n");
 			else
 				snprintf(&st[size - 2], (256 - size), " - malicious\r\n");
 			vt_led_off(leds[VT_BLOCK_LED]);
@@ -158,22 +172,22 @@ void vt_fw_traffic_status_event(vt_car_status_t car_status, float slot_rate, flo
 vt_status_t vt_fw_vector_report_matched(vt_vector_result_t *vector_t)
 {
 	char st[256];
+	int i = 0, size = 0;;
 
 	if(vector_t == NULL)
 		return VT_STATUS_NULL;
 
 	memset(st,'\0', 256);
-	if(vector_t->matched_flag > 0)
+	snprintf(st, 256, "- Vector rate: %lu/%lu = %.3f%% - all vectors: %lu - count invalid: %lu IDs: \r\n", vector_t->count_vector_in_rl, vector_t->count_vector_in_rt, vector_t->matched_rate * 100.0f, vector_t->count_all_vector, vector_t->count_invalid_vector_id);
+
+	for(i = 0; i < vector_t->count_invalid_id_items; i++)
 	{
-		snprintf(st, 256, "- Vector rate: %lu/%lu = %.3f%% - all vectors: %lu\r\n", vector_t->count_vector_in_rl, vector_t->count_vector_in_rt, vector_t->matched_rate * 100.0f, vector_t->count_all_vector);
+		size = strlen(st);
+		snprintf(&st[size - 2], 256 - size, " 0x%lx  ", vector_t->invalid_id[i]);
 	}
-	else
-	{
-		if(vector_t->matched_rate >= 0.96f)
-			snprintf(st, 256, "- Vector rate: %lu/%lu = %.3f%% - all vectors: %lu is too small\r\n", vector_t->count_vector_in_rl, vector_t->count_vector_in_rt, vector_t->matched_rate, vector_t->count_all_vector);
-		else
-			snprintf(st, 256, "- Vector rate: %lu/%lu = %.3f%% - all vectors: %lu\r\n", vector_t->count_vector_in_rl, vector_t->count_vector_in_rt, vector_t->matched_rate * 100.0f, vector_t->count_all_vector);
-	}
+	size = strlen(st);
+	st[size - 2] = '\r';
+	st[size - 1] = '\n';
 	UART_SendDataBlocking(INST_UART_PAL1, (const uint8_t*)st, strlen(st),30);
 
 	return VT_STATUS_SUCCESS;
@@ -236,11 +250,11 @@ void vt_fw_oem_init(void)
 	/* Add a malicious CAN frame */
 	vt_fw_add_malicious_can_frame(malicious_frame.msgId, malicious_frame.dataLen, malicious_frame.data);
 	/* Add monitor a CAN frame with operator = 0 */
-	vt_fw_monitor_add_can_frame(frames_pattern[0].msgId, frames_pattern[0].dataLen, frames_pattern[0].data, 0, 1,  10);
+	vt_fw_monitor_add_can_frame(frames_pattern[0].msgId, frames_pattern[0].dataLen, frames_pattern[0].data, 0, 1,  10, VT_FRAME_NORMAL, 1);	
 	/* Add monitor a CAN frame with operator = 1*/
-	vt_fw_monitor_add_can_frame(frames_pattern[1].msgId, frames_pattern[1].dataLen, frames_pattern[1].data, 1, 0,  10);
+	vt_fw_monitor_add_can_frame(frames_pattern[1].msgId, frames_pattern[1].dataLen, frames_pattern[1].data, 1, 0,  10, VT_FRAME_NORMAL, 1);
 	/* Add monitor a CAN frame pattern */
-	vt_fw_monitor_add_pattern(frames_pattern, 2, 0, 1, 10);
+	vt_fw_monitor_add_pattern(frames_pattern, 2, 0, 1, 10, VT_PATTERN_RANDOM, 50);	
 	/* Add monitor a range ids [0x600:0x6ff]. Send Alert if the received is more 100*/
 	vt_fw_monitor_add_ids_to_range_list(0, 0x600, 0x6ff, 1, 0,  100);
 	/* Set slot to rule */
