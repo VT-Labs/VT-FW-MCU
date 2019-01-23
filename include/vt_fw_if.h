@@ -37,7 +37,7 @@ extern "C" {
  *                          Define macro                            *
  *------------------------------------------------------------------*/
 #define VT_MAX_DATA_BYTE_LENGTH 8  
-
+#define MAX_ROLL_INVALID_ID 10
 /*------------------------------------------------------------------*
  *                Define Enumeration and Structure                  *
  *------------------------------------------------------------------*/
@@ -67,7 +67,8 @@ typedef enum _vt_status_t
 	VT_STATUS_SMALL_BUFF    = -12,
 	VT_STATUS_EXIST         = -13,
 	VT_STATUS_UNREADY       = -14,
-	VT_STATUS_UNSUPPORTED   = -15
+	VT_STATUS_INVALID_DATA	= -15,
+	VT_STATUS_UNSUPPORTED   = -16
 }vt_status_t;
 
 typedef enum _vt_car_status_t
@@ -78,17 +79,54 @@ typedef enum _vt_car_status_t
 	VT_CAR_ABNORMAL_STAT        = (1 << 2),
 	VT_CAR_ABNORMAL_DS_TP_STAT  = (1 << 3),
 	VT_CAR_ABNORMAL_OVER_STAT   = (1 << 4),
-	VT_CAR_ABNORMAL_MALICIOUS	= (1 << 5)
+	VT_CAR_ABNORMAL_MALICIOUS	= (1 << 5),
+	VT_CAR_ABNORMAL_INVALID_ID	= (1 << 6),
 }vt_car_status_t;
+
+typedef enum _vt_pattern_type_t
+{
+	VT_PATTERN_RANDOM = 0,    /*!< No sequence, no interval time. The element of pattern appear random */
+	VT_PATTERN_NO_SEQ_ITV,    /*!< No sequence but the interval time must be less than the maximum interval time */
+	VT_PATTERN_SEQ_NO_ITV,    /*!< No interval time but the CAN frame must appear in sequence */
+	VT_PATTERN_SEQ_ITV,       /*!< have interval time and sequence */
+	VT_PATTERN_UNKNOWN        /*!< Unknown this pattern */
+} vt_pattern_type_t;
+
+typedef enum _vt_frame_type_t
+{
+	VT_FRAME_NORMAL = 0,
+	VT_FRAME_CAN_ID_INC,
+	VT_FRAME_CAN_ID_DEC,
+	VT_FRAME_BYTE_0_INC,
+	VT_FRAME_BYTE_1_INC,
+	VT_FRAME_BYTE_2_INC,
+	VT_FRAME_BYTE_3_INC,
+	VT_FRAME_BYTE_4_INC,
+	VT_FRAME_BYTE_5_INC,
+	VT_FRAME_BYTE_6_INC,
+	VT_FRAME_BYTE_7_INC,
+	VT_FRAME_BYTE_0_DEC,
+	VT_FRAME_BYTE_1_DEC,
+	VT_FRAME_BYTE_2_DEC,
+	VT_FRAME_BYTE_3_DEC,
+	VT_FRAME_BYTE_4_DEC,
+	VT_FRAME_BYTE_5_DEC,
+	VT_FRAME_BYTE_6_DEC,
+	VT_FRAME_BYTE_7_DEC,
+	VT_FRAME_UNKNOWN
+} vt_frame_type_t;
 
 typedef struct _vt_vector_result_t
 {
-	uint32_t count_vector_in_rl;   
-	uint32_t count_vector_in_rt;  
+	uint32_t count_vector_in_rl;   /*!< Count matched of unique vector in rule*/
+	uint32_t count_vector_in_rt;   /*!< Count the occurrence of the unique vector in run time */
 	float matched_rate;            /*!< matched rate */
-	uint8_t matched_flag;          
-	uint32_t count_all_vector;     
-}vt_vector_result_t;
+	uint8_t matched_flag;          /*!< 1 is matched , 0 is unmatched */
+	uint32_t count_all_vector;     /*!< Counts all occurrences of a vector in a time window */
+	uint32_t count_invalid_vector_id;
+	uint32_t invalid_id[MAX_ROLL_INVALID_ID]; /*!< save latest invalid id */
+	uint32_t count_invalid_id_items;
+} vt_vector_result_t;
 
 typedef struct _vt_can_frame_t
 {
@@ -285,9 +323,11 @@ vt_status_t vt_fw_blacklist_add_range_can_id(uint32_t fromId, uint32_t toId, uin
  * @param [in]	 operator - 0: in range of minimum and maximum, 1: not in range of minimum and maximum.
  * @param [in]   min_val - is minimum of occurrence CAN frame.
  * @param [in]   max_val - is maximum of occurrence CAN frame.
+ * @param [in]   type - is vt_frame_type_t.
+ * @param [in]   step - is value of increase or decrease step.
  * @return        status
  */
-vt_status_t vt_fw_monitor_add_can_frame(uint32_t msgId, uint8_t dataLen, uint8_t *databuff, uint8_t operator, uint16_t min_val,  uint16_t max_val);
+vt_status_t vt_fw_monitor_add_can_frame(uint32_t msgId, uint8_t dataLen, uint8_t *databuff, uint8_t operator, uint16_t min_val,  uint16_t max_val, vt_frame_type_t type, uint8_t step);
 
 /*!
  * @brief  This API will add a pattern of CAN frame to monitor pattern list.
@@ -296,9 +336,11 @@ vt_status_t vt_fw_monitor_add_can_frame(uint32_t msgId, uint8_t dataLen, uint8_t
  * @param [in]	 operator - 0: in range of minimum and maximum, 1: not in range of minimum and maximum.
  * @param [in]   min_val - is minimum of occurrence pattern.
  * @param [in]   max_val - is maximum of occurrence pattern.
- * @return        status
+ * @param [in]   type - is pattern type.
+ * @param [in]   max_itv - is maximum interval time.
+ * @return       status
  */
-vt_status_t vt_fw_monitor_add_pattern(vt_can_frame_t *frames, uint8_t ele_size, uint8_t operator, uint16_t min_val,  uint16_t max_val);
+vt_status_t vt_fw_monitor_add_pattern(vt_can_frame_t *frames, uint8_t ele_size, uint8_t operator, uint16_t min_val,  uint16_t max_val, vt_pattern_type_t type, uint32_t max_itv);
 
 /*!
  * @brief  This API will add a range from CAN ID to CAN ID to monitor range list.
