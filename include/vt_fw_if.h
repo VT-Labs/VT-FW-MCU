@@ -72,7 +72,8 @@ typedef enum _vt_car_status_t
 	VT_CAR_ABNORMAL_MALICIOUS         = (1 << 5),
 	VT_CAR_ABNORMAL_INVALID_ID        = (1 << 6),
 	VT_CAR_ABNORMAL_PAYLOAD           = (1 << 7),
-	VT_CAR_ABNORMAL_OVER_CAN_ID       = (1 << 8)
+	VT_CAR_ABNORMAL_OVER_CAN_ID       = (1 << 8),
+	VT_CAR_ABNORMAL_DOS_ATTACK        = (1 << 9)
 }vt_car_status_t;
 
 typedef struct _vt_vector_result_t
@@ -123,6 +124,8 @@ typedef void (* vt_fw_traffic_status_callback)(vt_car_status_t car_status, float
 typedef vt_status_t (*vt_fw_blacklist_callback)(vt_fw_detail_result_t *detail_result);
 /*!< Monitor callback function to report result to server */
 typedef vt_status_t (*vt_fw_monitor_callback)(vt_fw_detail_result_t *detail_result);
+/*!< DoS attack callback function to report result to server */
+typedef vt_status_t (*vt_fw_dos_callback)(vt_fw_detail_result_t *detail_result);
 
 /*------------------------------------------------------------------*
  *                        Global Data Types                         *
@@ -199,6 +202,13 @@ void vt_fw_install_blacklist_callback(vt_fw_blacklist_callback callback);
  * @return       none.
  */
 void vt_fw_install_monitor_callback(vt_fw_monitor_callback callback);
+
+/*!
+ * @brief  This API will install DoS call back function to report to server or print out.
+ * @param [in]   callback - is DoS call back function.
+ * @return       none.
+ */
+void vt_fw_install_dos_callback(vt_fw_dos_callback callback);
 
 /*-------------------Configuration Function Prototypes------------------*/
 
