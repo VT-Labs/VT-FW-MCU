@@ -208,7 +208,7 @@ vt_status_t vt_fw_blacklist_report_matched(vt_fw_detail_result_t *detail_result)
 	if(detail_result == NULL)
 		return VT_STATUS_NULL;
 
-	if(detail_result->matched_type > 0)
+	if(detail_result->level > 0)
 	#ifdef S32R274RRUEVB
 		UART_SendDataBlocking(&uart_pal1_instance, (const uint8_t*)detail_result->detail, strlen(detail_result->detail),30);
 	#else
@@ -227,7 +227,26 @@ vt_status_t vt_fw_monitor_report_matched(vt_fw_detail_result_t *detail_result)
 	if(detail_result == NULL)
 			return VT_STATUS_NULL;
 
-	if(detail_result->matched_type > 0)
+	if(detail_result->level > 0)
+	#ifdef S32R274RRUEVB
+		UART_SendDataBlocking(&uart_pal1_instance, (const uint8_t*)detail_result->detail, strlen(detail_result->detail),30);
+	#else
+		UART_SendDataBlocking(INST_UART_PAL1, (const uint8_t*)detail_result->detail, strlen(detail_result->detail),30);
+	#endif
+
+	return VT_STATUS_SUCCESS;
+}
+
+/*!
+ * @brief  This API will send a DoS attack report to server or print out.
+ * @param [in]   *detail_result - pointer to vt_fw_detail_result_t structure.
+ * @return       status.
+ */
+vt_status_t vt_fw_dos_report(vt_fw_detail_result_t *detail_result)
+{
+	if(detail_result == NULL)
+			return VT_STATUS_NULL;
+
 	#ifdef S32R274RRUEVB
 		UART_SendDataBlocking(&uart_pal1_instance, (const uint8_t*)detail_result->detail, strlen(detail_result->detail),30);
 	#else
@@ -263,12 +282,14 @@ void vt_fw_oem_init(void)
 #ifndef USING_ONLY_ATTACK_RULES
 	/* Add a malicious CAN frame */
 	vt_fw_black_list_create_frames(2);
-	vt_fw_add_malicious_can_frame(malicious_frame.msgId, malicious_frame.dataLen, malicious_frame.data);
+	/* Level 1 */
+	vt_fw_add_malicious_can_frame(malicious_frame.msgId, malicious_frame.dataLen, malicious_frame.data, 1);
 	vt_fw_install_vector_callback(vt_fw_vector_report_matched);
 	vt_fw_install_traffic_status_callback(vt_fw_traffic_status_event);
 	vt_fw_install_blacklist_callback(vt_fw_blacklist_report_matched);
 #endif
 	vt_fw_install_monitor_callback(vt_fw_monitor_report_matched);
+	vt_fw_install_dos_callback(vt_fw_dos_report);
 }
 
 /*------------------------------------------------------------------*
